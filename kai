@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# share_anywhere.sh  ── minimal output: QR code + URL only
+DIR="${1:-$PWD}"                    # folder to share (default = current dir)
+IP=$(curl -s https://ifconfig.me)   # discover public IP
+export DIR IP
+
+python3 - <<'PY'
+import os, socket, socketserver, http.server, subprocess, sys, contextlib, importlib.util
+
+# ----- pick a free port -----
+with socket.socket() as s:
+    s.bind(('', 0))
+    PORT = s.getsockname()[1]
+
+# ----- lazy-install qrcode (silent) -----
+if importlib.util.find_spec("qrcode") is None:
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--quiet", "qrcode[pil]"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+    )
+import qrcode
+
+# ----- generate & print output -----
+url = f"http://{os.environ['IP']}:{PORT}"
+qr  = qrcode.QRCode(border=2); qr.add_data(url); qr.make(fit=True)
+qr.print_ascii(invert=True)      # big ASCII QR code
+print(url)                       # plain URL
+
+# ----- silent HTTP server -----
+class SilentHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args): pass
+    def log_request(self, *args):  pass
+
+os.chdir(os.environ['DIR'])
+with socketserver.TCPServer(("", PORT), SilentHandler) as httpd:
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass                     # exit quietly (no traceback)
+PY
+
