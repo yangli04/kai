@@ -1,5 +1,4 @@
-# kai (open)
-
+# kai
 A simple ssh server to open a directory and expose it as URL.
 
 
