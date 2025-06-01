@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# share_anywhere.sh  ── minimal output: QR code + URL only
+
 DIR="${1:-$PWD}"                    # folder to share (default = current dir)
 IP=$(curl -s https://ifconfig.me)   # discover public IP
 export DIR IP
@@ -23,8 +23,8 @@ import qrcode
 # ----- generate & print output -----
 url = f"http://{os.environ['IP']}:{PORT}"
 qr  = qrcode.QRCode(border=2); qr.add_data(url); qr.make(fit=True)
-qr.print_ascii(invert=True)      # big ASCII QR code
-print(url)                       # plain URL
+qr.print_ascii(invert=True)
+print(url)
 
 # ----- silent HTTP server -----
 class SilentHandler(http.server.SimpleHTTPRequestHandler):
@@ -36,6 +36,6 @@ with socketserver.TCPServer(("", PORT), SilentHandler) as httpd:
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        pass                     # exit quietly (no traceback)
+        pass
 PY
 
